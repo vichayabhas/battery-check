@@ -31,6 +31,33 @@ interface NavigatorWithBattery extends Navigator {
   getBattery?: () => Promise<BatteryManager>;
 }
 
+const url = "/15";
+
+async function postData(value: boolean) {
+  const data = { value };
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // const result = await response.json();
+    // console.log("Response:", result);
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+function getIsLowBattery(percentage: number, isCharge: boolean) {
+  return percentage < 300 && !isCharge;
+}
+
 export default function Battery() {
   const [level, setLevel] = React.useState<number | null>(null);
   const [isCharge, setIsCharge] = React.useState<boolean | null>(null);
@@ -51,22 +78,26 @@ export default function Battery() {
 
       const updateLevel = () =>
         setLevel((old) => {
-          if(!old){
-            return battery.level*100
+          if (!old) {
+            postData(getIsLowBattery(battery.level, battery.charging));
+            return battery.level * 100;
           }
-          if(old==battery.level*100){
-            return old
+          if (old == battery.level * 100) {
+            return old;
           }
+          postData(getIsLowBattery(battery.level, battery.charging));
           return battery.level * 100;
         });
       const updateCharge = () =>
         setIsCharge((old) => {
-          if(!old){
-            return battery.charging
+          if (!old) {
+            postData(getIsLowBattery(battery.level, battery.charging));
+            return battery.charging;
           }
-          if(old==battery.charging){
-            return old
+          if (old == battery.charging) {
+            return old;
           }
+          postData(getIsLowBattery(battery.level, battery.charging));
           return battery.charging;
         });
 
@@ -98,6 +129,13 @@ export default function Battery() {
         <p>
           🔋 Battery: {level.toFixed(0)}%
           {isCharge ? <>charge</> : <> not charge</>}
+          <button
+            onClick={async () => {
+             await postData(getIsLowBattery(level, isCharge));
+            }}
+          >
+            update
+          </button>
         </p>
       ) : (
         <p>Battery API not supported</p>
