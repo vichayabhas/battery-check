@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Checkbox } from "@mui/material";
 
 // Define the BatteryManager type (not included in lib.dom.d.ts)
 interface BatteryManager extends EventTarget {
@@ -55,7 +56,7 @@ async function postData(value: boolean) {
   }
 }
 function getIsLowBattery(percentage: number, isCharge: boolean) {
-  return percentage < 300 && !isCharge;
+  return percentage < 80 && !isCharge;
 }
 
 export default function Battery() {
@@ -79,25 +80,25 @@ export default function Battery() {
       const updateLevel = () =>
         setLevel((old) => {
           if (!old) {
-            postData(getIsLowBattery(battery.level, battery.charging));
+            postData(getIsLowBattery(battery.level * 100, battery.charging));
             return battery.level * 100;
           }
           if (old == battery.level * 100) {
             return old;
           }
-          postData(getIsLowBattery(battery.level, battery.charging));
+          postData(getIsLowBattery(battery.level * 100, battery.charging));
           return battery.level * 100;
         });
       const updateCharge = () =>
         setIsCharge((old) => {
           if (!old) {
-            postData(getIsLowBattery(battery.level, battery.charging));
+            postData(getIsLowBattery(battery.level * 100, battery.charging));
             return battery.charging;
           }
           if (old == battery.charging) {
             return old;
           }
-          postData(getIsLowBattery(battery.level, battery.charging));
+          postData(getIsLowBattery(battery.level * 100, battery.charging));
           return battery.charging;
         });
 
@@ -131,11 +132,12 @@ export default function Battery() {
           {isCharge ? <>charge</> : <> not charge</>}
           <button
             onClick={async () => {
-             await postData(getIsLowBattery(level, isCharge));
+              await postData(getIsLowBattery(level, isCharge));
             }}
           >
             update
           </button>
+          <Checkbox checked={getIsLowBattery(level, isCharge)} />
         </p>
       ) : (
         <p>Battery API not supported</p>
